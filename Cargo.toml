@@ -1,0 +1,13 @@
+[package]
+name = "pq-utils"
+version = "0.3.0"
+edition = "2024"
+description = "A utility tool for reading parquet files"
+license = "MIT OR Apache-2.0"
+
+[dependencies]
+clap = "4.5.30"
+csv = "1.3.1"
+parquet = "54.2.0"
+prettytable-rs = "0.10.0"
+serde_json = "1.0.139"
