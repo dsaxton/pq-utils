@@ -7,7 +7,7 @@ use std::io::Result;
 
 fn cli() -> Command {
     Command::new("pq-utils")
-        .version("0.3.0")
+        .version("0.3.1")
         .author("Daniel Saxton")
         .about("A utility tool for reading parquet files")
         .arg_required_else_help(true)
@@ -31,7 +31,7 @@ fn cli() -> Command {
         )
         .subcommand(
             Command::new("head")
-                .about("Display the first n rows of a file")
+                .about("Display the first n rows of a file (default: 10)")
                 .arg(
                     Arg::new("file")
                         .help("The name of the file to display")
