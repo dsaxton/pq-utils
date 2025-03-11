@@ -7,7 +7,7 @@ use std::io::Result;
 
 fn cli() -> Command {
     Command::new("pq-utils")
-        .version("0.3.1")
+        .version("0.4.0")
         .author("Daniel Saxton")
         .about("A utility tool for reading parquet files")
         .arg_required_else_help(true)
@@ -83,11 +83,11 @@ fn display_parquet_data_csv(file: File, num_records: Option<u64>) -> Result<()> 
 
     let mut writer = csv::Writer::from_writer(std::io::stdout());
 
-    let schema_descr = reader.metadata().file_metadata().schema_descr();
-    let headers: Vec<String> = schema_descr
-        .columns()
+    let schema = reader.metadata().file_metadata().schema();
+    let headers: Vec<String> = schema
+        .get_fields()
         .iter()
-        .map(|col| col.name().to_string())
+        .map(|field| field.name().to_string())
         .collect();
     writer.write_record(&headers)?;
 
@@ -119,7 +119,7 @@ fn display_parquet_data_json(file: File, num_records: Option<u64>) -> Result<()>
         let mut obj = serde_json::Map::new();
 
         for (i, field) in row.get_column_iter().enumerate() {
-            let col_name = reader.metadata().file_metadata().schema_descr().columns()[i].name();
+            let col_name = reader.metadata().file_metadata().schema().get_fields()[i].name();
             obj.insert(
                 col_name.to_string(),
                 match field.1 {
@@ -147,7 +147,7 @@ fn display_parquet_data_json(file: File, num_records: Option<u64>) -> Result<()>
 fn display_parquet_schema(file: &str) -> Result<()> {
     let file = File::open(file)?;
     let reader = SerializedFileReader::new(file)?;
-    let schema_descr = reader.metadata().file_metadata().schema_descr();
+    let schema = reader.metadata().file_metadata().schema();
 
     let mut table = Table::new();
 
@@ -157,11 +157,22 @@ fn display_parquet_schema(file: &str) -> Result<()> {
         Cell::new("Logical type"),
     ]));
 
-    for col in schema_descr.columns() {
-        let logical_type = col.logical_type().map(|lt| format!("{:?}", lt)).unwrap_or_default();
+    for field in schema.get_fields() {
+        let physical_type = if field.is_primitive() {
+            field.get_physical_type().to_string()
+        } else {
+            "STRUCT".to_string()
+        };
+
+        let logical_type = if let Some(logical_type) = field.get_basic_info().logical_type() {
+            format!("{:?}", logical_type)
+        } else {
+            "None".to_string()
+        };
+
         table.add_row(PrettyTableRow::new(vec![
-            Cell::new(col.name()),
-            Cell::new(&col.physical_type().to_string()),
+            Cell::new(field.name()),
+            Cell::new(&physical_type),
             Cell::new(&logical_type),
         ]));
     }
